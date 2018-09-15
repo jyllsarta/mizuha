@@ -1,6 +1,8 @@
 require "json"
 require "sqlite3"
 require "time"
+require "yaml"
+require 'twitter'
 
 def loadfile(filename)
     file = File.open(filename)
@@ -15,7 +17,7 @@ end
 
 def create_new_db(filename)
     db = SQLite3::Database.new(filename)
-    ddl = <<~EOF
+    ddl = <<EOS
         CREATE TABLE tweets(
             retweeted INTEGER,
             source TEXT,
@@ -32,7 +34,7 @@ def create_new_db(filename)
             lang TEXT,
             unixtime INTEGER
         );
-    EOF
+EOS
     db.execute(ddl)
     puts "DB created."
     db.close
@@ -73,7 +75,26 @@ def insert_to_db(filename, tweets)
     db.close
 end
 
-filename = "tweets.db"
-tweets = loadfile("tweets.js")
-create_new_db(filename)
-insert_to_db(filename, tweets)
+def init()
+    filename = "tweets.db"
+    tweets = loadfile("tweet.js")
+    create_new_db(filename)
+    insert_to_db(filename, tweets)
+end
+
+def get_access_keys()
+    keys = YAML.load_file("__access_keys.yml")
+end
+
+def post_to_twitter(keys, content)
+    client = Twitter::REST::Client.new do |config|
+        config.consumer_key        = keys["consumer_key"]
+        config.consumer_secret     = keys["consumer_secret"]
+        config.access_token        = keys["access_token"]
+        config.access_token_secret = keys["access_token_secret"]
+    end
+    client.update("にゃあーん")
+end
+
+keys = get_access_keys()
+post_to_twitter(keys, "に")
