@@ -1,6 +1,7 @@
 require "json"
 require "sqlite3"
 require "time"
+require "date"
 require "yaml"
 require 'twitter'
 
@@ -88,45 +89,44 @@ end
 class Mizuha
 
     # dig_years
-    def initialize(db_filename="tweets.db", dig_years=7)
+    def initialize(db_filename, dig_years)
         @db_filename = db_filename
         @dig_years = dig_years
     end
     
     #find tweets and wait forever
     def start
+        count = 0
         while true do
-            now = Time.now
-            tweets = find_each_year_of_tweet(now, @dig_years, 3)
+            now = DateTime.now
+            tweets = find_each_year_of_tweet(now, @dig_years, 5)
             tweets.each{|tweet|
                 post tweet
                 puts tweet
             }
             sleep 3
+            count += 1
+            puts DateTime.now.to_s if count % 1000 == 1
         end
     end
 
-    def time_at_year(basetime, years_ago)
-        basetime - years_ago * (60*60*24*365)
-    end
-
-    def find_each_year_of_tweet(basetime=Time.now, dig_years=7, search_seconds=3)
+    def find_each_year_of_tweet(basetime, dig_years, search_seconds)
         tweets = []
-        (1..dig_years).each{|x|
-            tweets += find_tweets(time_at_year(basetime, x), search_seconds)
+        (0..dig_years).each{|x|
+            tweets += find_tweets(basetime.prev_year(x), search_seconds)
         }
         tweets
     end
 
     # find tweets between [basetime, basetime+offset) ; where offset is seconds
-    def find_tweets(basetime=Time.now, offset=3)
+    def find_tweets(basetime, offset)
         connection = SQLite3::Database.open(@db_filename)
         sql = <<~SQL
         SELECT full_text 
         FROM tweets 
         WHERE unixtime BETWEEN ? AND ?
         SQL
-        result = connection.execute(sql, basetime.to_i, basetime.to_i + offset)
+        result = connection.execute(sql, basetime.to_time.to_i, basetime.to_time.to_i + offset)
         connection.close
 
         flatten = []
@@ -160,8 +160,8 @@ end
 #MizuhaDBMaintainer.init_db(tweets_filename="tweet.js", output_db_name="tweets2.db")
 
 # call Mizuha.post to say something to twitter
-mizuha = Mizuha.new
+mizuha = Mizuha.new("tweets.db", 8)
 mizuha.start
 #mizuha.post("lorem ipsum ほにゃほにゃー")
-#puts mizuha.find_tweets(Time.now - 10000000, 10000000)
-#puts mizuha.find_each_year_of_tweet(Time.now,7,50000)
+#puts mizuha.find_tweets(DateTime.now - 10000000, 10000000)
+#puts mizuha.find_each_year_of_tweet(DateTime.now,7, 3600*15)
