@@ -5,7 +5,7 @@ require "yaml"
 require 'twitter'
 
 
-class MizuhaDB
+class MizuhaDBMaintainer
     def self.init_db(tweets_filename="tweets.js", output_db_name="tweets.db")
         tweets = loadfile(tweets_filename)
         create_new_db(output_db_name)
@@ -86,6 +86,53 @@ private
 end
 
 class Mizuha
+
+    # dig_years
+    def initialize(db_filename="tweets.db", dig_years=5)
+        @db_filename = db_filename
+        @dig_years = dig_years
+    end
+    
+    #find tweets and wait forever
+    def start
+        while true do
+            now = Time.now
+            (1..@dig_years).each{|x|
+                tweets = find_tweets(time_at_year(now, x), 3)
+                tweets.each{|tweet|
+                    post tweet
+                    puts tweet
+                }
+            }
+            sleep 3
+        end
+    end
+
+    def time_at_year(basetime, years_ago)
+        basetime - years_ago * (60*60*24*365)
+    end
+
+    # find tweets between [basetime, basetime+offset) ; where offset is seconds
+    def find_tweets(basetime=Time.now, offset=3)
+        connection = SQLite3::Database.open(@db_filename)
+        sql = <<~SQL
+        SELECT full_text 
+        FROM tweets 
+        WHERE unixtime BETWEEN ? AND ?
+        SQL
+        result = connection.execute(sql, basetime.to_i, basetime.to_i + offset)
+        connection.close
+
+        flatten = []
+        result.each {|x| flatten.append x[0].gsub(/&gt;/,">").gsub(/&lt;/,"<")}
+        remove_mute_words flatten
+    end
+
+    def remove_mute_words(tweets)
+        tweets.select{|x| !x.include?("@") && !x.include?("#")}
+    end
+
+    #post tweet to twitter
     def post(content)
         keys = get_access_keys
         client = Twitter::REST::Client.new do |config|
@@ -97,15 +144,17 @@ class Mizuha
         client.update(content)
     end
 
-private
-    def get_access_keys()
-        @keys = YAML.load_file("access_keys.yml") if @keys.nil?
+    def get_access_keys
+        @keys |= YAML.load_file("access_keys.yml")
     end
+
 end
 
-# call MizuhaDB.init_db to create and initialize new database
-#MizuhaDB.init_db(tweets_filename="tweet.js", output_db_name="tweets2.db")
+# call MizuhaDBMaintainer.init_db to create and initialize new database
+#MizuhaDBMaintainer.init_db(tweets_filename="tweet.js", output_db_name="tweets2.db")
 
 # call Mizuha.post to say something to twitter
 mizuha = Mizuha.new
-mizuha.post("lorem ipsum ほにゃほにゃー")
+mizuha.start
+#mizuha.post("lorem ipsum ほにゃほにゃー")
+#puts mizuha.find_tweets(Time.now - 10000000, 10000000)
