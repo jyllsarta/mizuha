@@ -88,7 +88,7 @@ end
 class Mizuha
 
     # dig_years
-    def initialize(db_filename="tweets.db", dig_years=5)
+    def initialize(db_filename="tweets.db", dig_years=7)
         @db_filename = db_filename
         @dig_years = dig_years
     end
@@ -97,12 +97,10 @@ class Mizuha
     def start
         while true do
             now = Time.now
-            (1..@dig_years).each{|x|
-                tweets = find_tweets(time_at_year(now, x), 3)
-                tweets.each{|tweet|
-                    post tweet
-                    puts tweet
-                }
+            tweets = find_each_year_of_tweet(now, @dig_years, 3)
+            tweets.each{|tweet|
+                post tweet
+                puts tweet
             }
             sleep 3
         end
@@ -110,6 +108,14 @@ class Mizuha
 
     def time_at_year(basetime, years_ago)
         basetime - years_ago * (60*60*24*365)
+    end
+
+    def find_each_year_of_tweet(basetime=Time.now, dig_years=7, search_seconds=3)
+        tweets = []
+        (1..dig_years).each{|x|
+            tweets += find_tweets(time_at_year(basetime, x), search_seconds)
+        }
+        tweets
     end
 
     # find tweets between [basetime, basetime+offset) ; where offset is seconds
@@ -158,3 +164,4 @@ mizuha = Mizuha.new
 mizuha.start
 #mizuha.post("lorem ipsum ほにゃほにゃー")
 #puts mizuha.find_tweets(Time.now - 10000000, 10000000)
+#puts mizuha.find_each_year_of_tweet(Time.now,7,50000)
