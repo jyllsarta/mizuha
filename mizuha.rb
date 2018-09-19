@@ -96,17 +96,13 @@ class Mizuha
     
     #find tweets and wait forever
     def start
-        count = 0
         while true do
             now = DateTime.now
             tweets = find_each_year_of_tweet(now, @dig_years, 5)
             tweets.each{|tweet|
                 post tweet
-                puts tweet
             }
             sleep 3
-            count += 1
-            puts DateTime.now.to_s if count % 1000 == 1
         end
     end
 
@@ -151,7 +147,8 @@ class Mizuha
     end
 
     def get_access_keys
-        @keys |= YAML.load_file("access_keys.yml")
+        @keys = YAML.load_file("access_keys.yml") if @keys.nil?
+        @keys
     end
 
 end
@@ -160,8 +157,5 @@ end
 #MizuhaDBMaintainer.init_db(tweets_filename="tweet.js", output_db_name="tweets2.db")
 
 # call Mizuha.post to say something to twitter
-mizuha = Mizuha.new("tweets.db", 8)
+mizuha = Mizuha.new("tweets.db", 7)
 mizuha.start
-#mizuha.post("lorem ipsum ほにゃほにゃー")
-#puts mizuha.find_tweets(DateTime.now - 10000000, 10000000)
-#puts mizuha.find_each_year_of_tweet(DateTime.now,7, 3600*15)
