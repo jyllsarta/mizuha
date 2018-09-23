@@ -6,7 +6,7 @@ require "yaml"
 require 'twitter'
 
 
-class MizuhaDBMaintainer
+class MizuhaDB
     def self.init_db(tweets_filename="tweets.js", output_db_name="tweets.db")
         tweets = loadfile(tweets_filename)
         create_new_db(output_db_name)
@@ -153,8 +153,8 @@ class Mizuha
 
 end
 
-# call MizuhaDBMaintainer.init_db to create and initialize new database
-#MizuhaDBMaintainer.init_db(tweets_filename="tweet.js", output_db_name="tweets2.db")
+# call MizuhaDB.init_db to create and initialize new database
+#MizuhaDB.init_db(tweets_filename="tweet.js", output_db_name="tweets2.db")
 
 # call Mizuha.post to say something to twitter
 mizuha = Mizuha.new("tweets.db", 7)
