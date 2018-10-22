@@ -97,12 +97,22 @@ class Mizuha
     #find tweets and wait forever
     def start
         while true do
-            now = DateTime.now
-            tweets = find_each_year_of_tweet(now, @dig_years, 5)
-            tweets.each{|tweet|
-                post tweet
-            }
-            sleep 3
+            begin
+                now = DateTime.now
+                tweets = find_each_year_of_tweet(now, @dig_years, 5)
+                tweets.each{|tweet|
+                    post tweet
+                }
+                sleep 3
+            rescue => e
+                # writes log
+                File.open("mizuha.log", "a") do |file|
+                    file.puts(e.class.to_s)
+                    file.puts(e.message)
+                    file.puts(e.backtrace.join("\n"))
+                    file.puts("")
+                end
+            end
         end
     end
 
