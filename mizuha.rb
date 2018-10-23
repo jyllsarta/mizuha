@@ -102,6 +102,9 @@ class Mizuha
                 tweets = find_each_year_of_tweet(now, @dig_years, 5)
                 tweets.each{|tweet|
                     post tweet
+                    File.open("mizuha.log", "a") do |file|
+                        file.puts("#{Time.now.to_s} : #{tweet}")
+                    end
                 }
                 sleep 3
             rescue => e
