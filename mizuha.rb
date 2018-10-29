@@ -110,6 +110,7 @@ class Mizuha
             rescue => e
                 # writes log
                 File.open("mizuha.log", "a") do |file|
+                    file.puts(Time.now.to_s)
                     file.puts(e.class.to_s)
                     file.puts(e.message)
                     file.puts(e.backtrace.join("\n"))
