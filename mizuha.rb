@@ -4,6 +4,7 @@ require "time"
 require "date"
 require "yaml"
 require 'twitter'
+require 'pry'
 
 
 class MizuhaDB
@@ -59,24 +60,25 @@ private
         tweets.each{ |t|
             count += 1
             if count % 1000 == 0
-                puts "inserting #{t["created_at"]} ..."
+                puts "inserting #{tweet["created_at"]} ..."
             end
+            tweet = t["tweet"]
             db.execute(
                 sql,
-                t["retweeted"] ? 1 : 0,
-                t["source"],
-                t["entities"].to_s,
-                t["display_text_range"].to_s, #使い道が思いつかないので正規化する気にならない
-                t["favorite_count"],
-                t["id_str"],
-                t["truncated"] ? 1 : 0,
-                t["retweets_count"],
-                t["id"],
-                t["created_at"],
-                t["favorited"] ? 1 : 0,
-                t["full_text"],
-                t["lang"],
-                Time.parse(t["created_at"]).to_i #is unixtime
+                tweet["retweeted"] ? 1 : 0,
+                tweet["source"],
+                tweet["entities"].to_s,
+                tweet["display_text_range"].to_s, #使い道が思いつかないので正規化する気にならない
+                tweet["favorite_count"],
+                tweet["id_str"],
+                tweet["truncated"] ? 1 : 0,
+                tweet["retweets_count"],
+                tweet["id"],
+                tweet["created_at"],
+                tweet["favorited"] ? 1 : 0,
+                tweet["full_text"],
+                tweet["lang"],
+                Time.parse(tweet["created_at"]).to_i #is unixtime
             )
         }
         puts "comitting..."
@@ -132,15 +134,15 @@ class Mizuha
     def find_tweets(basetime, offset)
         connection = SQLite3::Database.open(@db_filename)
         sql = <<~SQL
-        SELECT full_text 
-        FROM tweets 
+        SELECT full_text, unixtime
+        FROM tweets
         WHERE unixtime BETWEEN ? AND ?
         SQL
         result = connection.execute(sql, basetime.to_time.to_i, basetime.to_time.to_i + offset)
         connection.close
 
         flatten = []
-        result.each {|x| flatten.append x[0].gsub(/&gt;/,">").gsub(/&lt;/,"<")}
+        result.each {|x| flatten.append (x[0].gsub(/&gt;/,">").gsub(/&lt;/,"<"))[0...133] + " [#{Time.at(x[1]).year}]"}
         remove_mute_words flatten
     end
 
@@ -168,7 +170,7 @@ class Mizuha
 end
 
 # call MizuhaDB.init_db to create and initialize new database
-#MizuhaDB.init_db(tweets_filename="tweet.js", output_db_name="tweets2.db")
+#MizuhaDB.init_db(tweets_filename="tweet.js", output_db_name="tweets.db")
 
 # call Mizuha.post to say something to twitter
 mizuha = Mizuha.new("tweets.db", 7)
