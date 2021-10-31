@@ -60,7 +60,7 @@ private
         tweets.each{ |t|
             count += 1
             if count % 1000 == 0
-                puts "inserting #{tweet["created_at"]} ..."
+                puts "inserting #{t["created_at"]} ..."
             end
             tweet = t["tweet"]
             db.execute(
@@ -170,7 +170,7 @@ class Mizuha
 end
 
 # call MizuhaDB.init_db to create and initialize new database
-#MizuhaDB.init_db(tweets_filename="tweet.js", output_db_name="tweets.db")
+# MizuhaDB.init_db(tweets_filename="tweet.js", output_db_name="tweets.db")
 
 # call Mizuha.post to say something to twitter
 mizuha = Mizuha.new("tweets.db", 7)
