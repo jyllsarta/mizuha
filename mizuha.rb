@@ -101,14 +101,14 @@ class Mizuha
         while true do
             begin
                 now = DateTime.now
-                tweets = find_each_year_of_tweet(now, @dig_years, 5)
+                tweets = find_each_year_of_tweet(now, @dig_years, 15)
                 tweets.each{|tweet|
                     post tweet
                     File.open("mizuha.log", "a") do |file|
                         file.puts("#{Time.now.to_s} : #{tweet}")
                     end
                 }
-                sleep 3
+                sleep 12
             rescue => e
                 # writes log
                 File.open("mizuha.log", "a") do |file|
