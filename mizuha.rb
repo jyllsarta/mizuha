@@ -88,6 +88,41 @@ private
     end
 end
 
+# ありがたく使わせてもらう
+# https://zenn.dev/waddy/articles/twitter-api-migration
+class Tweet
+    require "http"
+    require "simple_oauth"
+    POST_TWEET_ENDPOINT = "https://api.twitter.com/2/tweets".freeze
+  
+    HEADERS = {
+      "Content-Type": "application/json",
+      "User-Agent": "My-Tweet-Bot"
+    }.freeze
+  
+    def send_tweet(text)
+        keys = get_access_keys()
+
+        client = HTTP.auth(auth_header("POST", POST_TWEET_ENDPOINT, {
+            consumer_key: keys["consumer_key"],
+            consumer_secret: keys["consumer_secret"],
+            token: keys["access_token"],
+            token_secret: keys["access_token_secret"],
+        }))
+        client.post(POST_TWEET_ENDPOINT, headers: HEADERS, json: { text: text})
+    end
+  
+    # OAuth1.0aで Authentication ヘッダのシグネチャを生成します。これにSimpleOAuthを利用
+    def auth_header(method, url, auth_params)
+      SimpleOAuth::Header.new(method, url, {}, auth_params).to_s
+    end
+
+    def get_access_keys
+        @keys = YAML.load_file("access_keys.yml") if @keys.nil?
+        @keys
+    end
+end
+
 class Mizuha
 
     # dig_years
@@ -108,7 +143,7 @@ class Mizuha
                         file.puts("#{Time.now.to_s} : #{tweet}")
                     end
                 }
-                sleep 12
+                sleep 10
             rescue => e
                 # writes log
                 File.open("mizuha.log", "a") do |file|
@@ -152,25 +187,13 @@ class Mizuha
 
     #post tweet to twitter
     def post(content)
-        keys = get_access_keys
-        client = Twitter::REST::Client.new do |config|
-            config.consumer_key        = keys["consumer_key"]
-            config.consumer_secret     = keys["consumer_secret"]
-            config.access_token        = keys["access_token"]
-            config.access_token_secret = keys["access_token_secret"]
-        end
-        client.update(content)
+        tweet = Tweet.new
+        tweet.send_tweet(content)
     end
-
-    def get_access_keys
-        @keys = YAML.load_file("access_keys.yml") if @keys.nil?
-        @keys
-    end
-
 end
 
 # call MizuhaDB.init_db to create and initialize new database
-# MizuhaDB.init_db(tweets_filename="tweet.js", output_db_name="tweets.db")
+#MizuhaDB.init_db(tweets_filename="tweet.js", output_db_name="tweets.db")
 
 # call Mizuha.post to say something to twitter
 mizuha = Mizuha.new("tweets.db", 7)
